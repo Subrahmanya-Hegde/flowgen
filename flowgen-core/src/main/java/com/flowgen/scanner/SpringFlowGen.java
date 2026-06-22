@@ -55,47 +55,41 @@ public class SpringFlowGen {
         return this;
     }
 
-    public SpringFlowGen outputAll(String path) throws IOException {
+    public SpringFlowGen outputIndex(String dir) throws IOException {
+        Path d = Path.of(dir);
+        Files.createDirectories(d);
+
         StringBuilder sb = new StringBuilder();
         sb.append("# Spring Boot Flow Diagrams\n\n");
-        sb.append("_Auto-generated: ").append(now()).append("_  \n");
-        sb.append("_Source: `").append(root).append("`_\n\n");
-        sb.append("---\n\n");
+        sb.append("_Auto-generated: ").append(now()).append("_\n\n");
 
-        sb.append("## Index\n\n");
         sb.append("| # | Type | Class | Method | Endpoint |\n");
         sb.append("|---|------|-------|--------|----------|\n");
         for (int i = 0; i < flows.size(); i++) {
             Flow f = flows.get(i);
+            String link = f.className + "/" + f.methodName + ".md";
             sb.append("| ").append(i + 1)
               .append(" | ").append(f.type)
               .append(" | ").append(f.className)
-              .append(" | ").append(f.methodName).append("()")
-              .append(" | ").append(f.endpoint)
+              .append(" | [").append(f.methodName).append("()](").append(link).append(")")
+              .append(" | `").append(f.endpoint).append("`")
               .append(" |\n");
         }
-        sb.append("\n---\n\n");
 
-        for (Flow f : flows) {
-            sb.append("## ").append(f.className).append(".").append(f.methodName).append("()\n\n");
-            sb.append(flowBody(f)).append("\n\n---\n\n");
-        }
-
-        Files.createDirectories(Path.of(path).toAbsolutePath().getParent());
-        Files.writeString(Path.of(path), sb.toString());
-        System.out.println("📄 " + flows.size() + " flows → " + path);
+        Files.writeString(d.resolve("index.md"), sb.toString());
+        System.out.println("📄 " + flows.size() + " flows → " + d.resolve("index.md"));
         return this;
     }
 
     public SpringFlowGen outputEach(String dir) throws IOException {
         Path d = Path.of(dir);
-        Files.createDirectories(d);
 
         for (Flow f : flows) {
-            String name = f.className + "_" + f.methodName + ".md";
+            Path classDir = d.resolve(f.className);
+            Files.createDirectories(classDir);
             String content = "# " + f.className + "." + f.methodName + "()\n\n"
                 + flowBody(f) + "\n";
-            Files.writeString(d.resolve(name), content);
+            Files.writeString(classDir.resolve(f.methodName + ".md"), content);
         }
         System.out.println("📁 " + flows.size() + " files → " + dir);
         return this;
